@@ -82,3 +82,4 @@ Choose **Settings → Documents → Keep my uploaded design** (the default). Sel
 On a DOCX document, **Create PDF preview** saves a private derived PDF using the same source design and no AI edits. The extracted-text view does not represent the source layout. Previews retain ownership checks and document version links.
 
 References: [Playwright PDF](https://playwright.dev/docs/api/class-page#page-pdf), [LibreOffice conversion parameters](https://help.libreoffice.org/latest/en-US/text/shared/guide/start_parameters.html), [Cloud Run container contract](https://docs.cloud.google.com/run/docs/container-contract), [Cloud Run secrets](https://docs.cloud.google.com/run/docs/configuring/services/secrets).
+# Synapse-document-renderer

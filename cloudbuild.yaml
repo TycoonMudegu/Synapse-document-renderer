@@ -1,0 +1,21 @@
+steps:
+    - name: gcr.io/cloud-builders/docker
+      args: ['build', '-t', '${_IMAGE}', '.']
+    - name: gcr.io/cloud-builders/docker
+      args:
+          [
+              'run',
+              '--rm',
+              '-e',
+              'RUN_CONVERSION_TESTS=1',
+              '${_IMAGE}',
+              'node',
+              '--test',
+              'test/renderer.test.mjs',
+          ]
+images: ['${_IMAGE}']
+substitutions:
+    _IMAGE: 'europe-west1-docker.pkg.dev/$PROJECT_ID/synapse/document-renderer:latest'
+timeout: 1200s
+options:
+    dynamicSubstitutions: true

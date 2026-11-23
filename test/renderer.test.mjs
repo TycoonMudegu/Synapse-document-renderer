@@ -99,7 +99,9 @@ test('the HTTP API authenticates before inspection and returns no-cache binary d
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
     const base = `http://127.0.0.1:${server.address().port}`;
     try {
-        assert.equal((await fetch(`${base}/healthz`)).status, 200);
+        const health = await fetch(`${base}/health`);
+        assert.equal(health.status, 200);
+        assert.deepEqual(await health.json(), { status: 'ok' });
         const unauthorized = await fetch(`${base}/v1/inspect-docx`, { method: 'POST' });
         assert.equal(unauthorized.status, 401);
         const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };

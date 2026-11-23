@@ -44,7 +44,9 @@ RUN_CONVERSION_TESTS=1 node --test test/renderer.test.mjs
 
 ## API
 
-All POST endpoints require `Authorization: Bearer <DOCUMENT_RENDERER_TOKEN>` and `Content-Type: application/json`. The token must be at least 32 non-whitespace characters. `GET /healthz` is public and returns only readiness. No CORS access is granted, and tokens never go to browsers.
+All POST endpoints require `Authorization: Bearer <DOCUMENT_RENDERER_TOKEN>` and `Content-Type: application/json`. The token must be at least 32 non-whitespace characters. `GET /health` is public and returns only readiness. No CORS access is granted, and tokens never go to browsers.
+
+Use `/health` for external checks. [Cloud Run reserves some URL paths ending in `z`](https://docs.cloud.google.com/run/docs/known-issues#reserved-url-paths), so `/healthz` can return a Google 404 before reaching the container.
 
 | Endpoint | Request | Response |
 | --- | --- | --- |
@@ -64,7 +66,7 @@ No deployment is performed by preparing this repository. When ready, authenticat
 PROJECT_ID=your-project-id REGION=your-region bash deploy.sh
 ```
 
-The script enables the required services, creates an Artifact Registry repository, builds and runs conversion tests, creates a dedicated runtime service account and secret if absent, and deploys the container. It preserves an existing secret. It scales to zero, limits instances to two, sets concurrency to one and uses a 75-second request timeout. The HTTPS endpoint permits network access from the external Apache host; every document request is authenticated by the service's bearer token. The dedicated service account receives access only to its renderer secret. No default project-wide runtime account is used. Cloud Build's build account needs permission to write to the selected repository.
+The script enables the required services, creates an Artifact Registry repository, builds and runs conversion tests, creates a dedicated runtime service account and secret if absent, and deploys the container. It preserves an existing secret. It checks the public `/health` endpoint after deployment and exits with an error if the check fails. It scales to zero, limits instances to two, sets concurrency to one and uses a 75-second request timeout. The HTTPS endpoint permits network access from the external Apache host; every document request is authenticated by the service's bearer token. The dedicated service account receives access only to its renderer secret. No default project-wide runtime account is used. Cloud Build's build account needs permission to write to the selected repository.
 
 For a Cloud Build repository connection later, connect this repository and use its root `cloudbuild.yaml`; the root `Dockerfile` is the image build context. `.gcloudignore` and `.dockerignore` exclude local dependencies, Git metadata, environment files and test output from uploads/builds. The PHP application is not part of that build.
 

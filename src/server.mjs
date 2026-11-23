@@ -52,7 +52,7 @@ export function createRendererServer({
         response.setHeader('Cache-Control', 'no-store');
         response.setHeader('X-Content-Type-Options', 'nosniff');
         response.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-        if (request.url === '/healthz' && request.method === 'GET') {
+        if (request.url === '/health' && request.method === 'GET') {
             response.writeHead(200, { 'Content-Type': 'application/json' });
             response.end('{"status":"ok"}');
             return;

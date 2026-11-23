@@ -44,5 +44,9 @@ gcloud run deploy "$SERVICE_NAME" --image "$IMAGE" --region "$REGION" --project 
     --service-account "$SERVICE_ACCOUNT_EMAIL" --set-secrets "DOCUMENT_RENDERER_TOKEN=${SECRET_NAME}:latest" \
     --port 8080 --cpu 1 --memory 2Gi --concurrency 1 --timeout 75s --min-instances 0 --max-instances 2 \
     --allow-unauthenticated
-gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format 'value(status.url)'
+SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format 'value(status.url)')"
+printf 'Checking public health endpoint: %s/health\n' "$SERVICE_URL"
+curl --fail --silent --show-error --retry 4 --retry-delay 3 --retry-all-errors \
+    --connect-timeout 10 --max-time 30 "${SERVICE_URL%/}/health" >/dev/null
+printf 'Health check passed. Renderer URL: %s\n' "$SERVICE_URL"
 printf '%s\n' 'Set DOCUMENT_RENDERER_URL to this URL in the PHP .env. Copy the secret into DOCUMENT_RENDERER_TOKEN privately. Existing secrets are never rotated by this script.'

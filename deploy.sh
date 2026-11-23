@@ -20,7 +20,25 @@ fi
 if ! gcloud secrets describe "$SECRET_NAME" --project "$PROJECT_ID" >/dev/null 2>&1; then
     openssl rand -hex 32 | tr -d '\n' | gcloud secrets create "$SECRET_NAME" --replication-policy automatic --data-file=- --project "$PROJECT_ID"
 fi
-gcloud secrets add-iam-policy-binding "$SECRET_NAME" --member "serviceAccount:${SERVICE_ACCOUNT_EMAIL}" --role roles/secretmanager.secretAccessor --project "$PROJECT_ID" >/dev/null
+# A newly created service account can take over a minute to become visible to Secret Manager.
+retry_delay=2
+for attempt in {1..8}; do
+    if binding_output="$(gcloud secrets add-iam-policy-binding "$SECRET_NAME" --member "serviceAccount:${SERVICE_ACCOUNT_EMAIL}" --role roles/secretmanager.secretAccessor --project "$PROJECT_ID" 2>&1)"; then
+        break
+    else
+        binding_status=$?
+    fi
+    if [[ "$binding_output" != *"Service account ${SERVICE_ACCOUNT_EMAIL} does not exist"* || "$attempt" -eq 8 ]]; then
+        printf '%s\n' "$binding_output" >&2
+        exit "$binding_status"
+    fi
+    printf 'Waiting for service account propagation; retrying secret access binding in %ss (attempt %s/8).\n' "$retry_delay" "$attempt" >&2
+    sleep "$retry_delay"
+    retry_delay=$((retry_delay * 2))
+    if ((retry_delay > 30)); then
+        retry_delay=30
+    fi
+done
 gcloud builds submit . --config cloudbuild.yaml --substitutions "_IMAGE=${IMAGE}" --project "$PROJECT_ID"
 gcloud run deploy "$SERVICE_NAME" --image "$IMAGE" --region "$REGION" --project "$PROJECT_ID" \
     --service-account "$SERVICE_ACCOUNT_EMAIL" --set-secrets "DOCUMENT_RENDERER_TOKEN=${SECRET_NAME}:latest" \
